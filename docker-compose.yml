@@ -1,0 +1,65 @@
+version: "3.3"
+services:
+  app:
+    build:
+      args:
+        user: evan
+        uid: 1000
+      context: ./SisPonto-backend/
+      dockerfile: ./docker/Dockerfile
+    image: php81
+    container_name: senai-fiesc
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www/
+      - ./SisPonto-backend/docker/docker-compose/php/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+      - ./SisPonto-backend/docker/docker-compose/php/php.ini:/usr/local/etc/php/conf.d/php.ini
+    networks:
+      - fiesc
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-senai-fiesc
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./SisPonto-backend:/var/www/SisPonto-backend
+      - ./SisPonto-backend/docker/docker-compose/nginx:/etc/nginx/conf.d
+      - ./SisPonto-frontend:/var/www/SisPonto-frontend
+    networks:
+      - fiesc
+    links:
+      - senai-fiesc
+  db:
+    container_name: postgres_container
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: 123456789
+      POSTGRES_USER: evan
+      POSTGRES_DB: sisponto
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./SisPonto-backend/postgres-data:/var/lib/postgresql/data
+    networks:
+      - fiesc
+    restart: unless-stopped
+
+  frontend:
+    image: node:16
+    container_name: vue-app
+    working_dir: /var/www/SisPonto-frontend
+    volumes:
+      - ./SisPonto-frontend:/var/www/
+    command: npm run serve
+    depends_on:
+      - app
+    networks:
+      - fiesc
+    ports:
+      - "8080:8080"
+networks:
+  fiesc:
+    driver: bridge
