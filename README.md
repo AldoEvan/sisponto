@@ -1,2 +1,0 @@
-# sisponto
-Projeto de estudo
